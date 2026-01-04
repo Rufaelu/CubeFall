@@ -74,6 +74,7 @@ func main() {
 	var player objects.Player
 	// var bullet objects.Bullet
 	var bullets []objects.Bullet
+	var wall objects.Wall
 
 	land.New()
 	enemy.New()
@@ -81,8 +82,12 @@ func main() {
 	// bullet.New()
 
 	land.LoadVertexAttribs()
+	wall.New()
+	wall.LoadVertexAttribs()
+
 	enemy.LoadVertexAttribs()
 	player.LoadVertexAttribs()
+
 	// bullet.LoadVertexAttribs()
 
 	enemySpeed := float32(0.01111)
@@ -208,6 +213,8 @@ func main() {
 		shader.SetMat4("view", camera.GetViewMatrix())
 
 		land.Renderer(shader)
+		wall.Renderer(shader)
+
 		enemy.Renderer(shader)
 		player.Renderer(camera, shader)
 

@@ -61,3 +61,64 @@ func (land *Land) Renderer(shader_program *helper.Shader) {
 		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(land.Vertices)/5))
 	}
 }
+
+type Wall struct {
+	texture   helper.TextureId
+	Vertices  []float32
+	Positions []mgl32.Vec3
+	VAO       helper.BufferId
+}
+
+func (wall *Wall) New() {
+	wall_file_path := filepath.Join("assets", "wall.jpg")
+	wall.texture = helper.LoadTextureAlphaJpeg(wall_file_path)
+
+	// Vertical quad (facing +Z)
+	wall.Vertices = []float32{
+		-0.5, -0.5, 0.0, 0.0, 0.0,
+		0.5, -0.5, 0.0, 1.0, 0.0,
+		0.5, 0.5, 0.0, 1.0, 1.0,
+		0.5, 0.5, 0.0, 1.0, 1.0,
+		-0.5, 0.5, 0.0, 0.0, 1.0,
+		-0.5, -0.5, 0.0, 0.0, 0.0,
+	}
+
+	wall.Positions = make([]mgl32.Vec3, 0)
+
+	// Wall spans width of the land
+	z := float32(-52)
+	y := float32(0.2)
+
+	for x := -50; x <= 50; x++ {
+		wall.Positions = append(
+			wall.Positions,
+			mgl32.Vec3{float32(x), y, z},
+		)
+	}
+}
+func (wall *Wall) LoadVertexAttribs() {
+	wall.VAO = helper.GenBindVertexArray(1)
+	helper.GenBindBuffer(gl.ARRAY_BUFFER, 1)
+	helper.BufferDataFloat(gl.ARRAY_BUFFER, wall.Vertices, gl.DYNAMIC_DRAW)
+
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 5*4, nil)
+	gl.EnableVertexAttribArray(0)
+
+	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 5*4, 3*4)
+	gl.EnableVertexAttribArray(1)
+
+	helper.UnbindVertexArray()
+}
+func (wall *Wall) Renderer(shader *helper.Shader) {
+	helper.BindVertextArray(wall.VAO)
+	helper.BindTexture(wall.texture)
+
+	for _, pos := range wall.Positions {
+		model := mgl32.Ident4()
+		model = model.Mul4(mgl32.Scale3D(10, 50, 10))
+
+		model = mgl32.Translate3D(pos.X(), pos.Y(), pos.Z()).Mul4(model)
+		shader.SetMat4("model", model)
+		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(wall.Vertices)/5))
+	}
+}
