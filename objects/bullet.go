@@ -1,76 +1,121 @@
 package objects
 
 import (
+	"math"
 	"path/filepath"
 
 	"CubeFall/helper"
+
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
 type Bullet struct {
-	texture   helper.TextureId
-	IsFired   bool
-	ShotSpeed float32
-	Vertices  []float32
-	Position  mgl32.Vec3
-	VAO       helper.BufferId
+	texture       helper.TextureId
+	Vertices      []float32
+	Position      mgl32.Vec3
+	StartPosition mgl32.Vec3 // ✅ ADD THIS
+	Direction     mgl32.Vec3
+	Velocity      mgl32.Vec3
+	ShotSpeed     float32
+	VAO           helper.BufferId
+	Alive         bool
+	Radius        float32
 }
 
-type BulletInMotion struct {
-	PosX float32
-	PosY float32
-	PosZ float32
-}
+// type BulletInMotion struct {
+// 	PosX float32
+// 	PosY float32
+// 	PosZ float32
+// }
 
-func (bullet *Bullet) New() {
+func (b *Bullet) New() {
+	b.texture = helper.LoadTextureAlphaPng(
+		filepath.Join("assets", "diddy.png"),
+	)
+	b.Radius = 0.15
 
-	gold_file_path := filepath.Join("assets", "gold.png")
-	bullet.texture = helper.LoadTextureAlphaPng(gold_file_path)
+	b.ShotSpeed = 10.0
+	b.Alive = false
 
-	bullet.IsFired = false
-	bullet.ShotSpeed = .2222
-	bullet.Vertices = []float32{
-		-0.5, 0.5, -0.5, 0.0, 1.0,
-		0.5, 0.5, -0.5, 1.0, 1.0,
-		0.5, 0.5, 0.5, 1.0, 0.0,
-		0.5, 0.5, 0.5, 1.0, 0.0,
-		-0.5, 0.5, 0.5, 0.0, 0.0,
-		-0.5, 0.5, -0.5, 0.0, 1.0,
+	segments := 16
+	radius := float32(0.05)
+
+	b.Vertices = []float32{}
+
+	for i := 0; i < segments; i++ {
+		angle1 := float32(i) * 2.0 * math.Pi / float32(segments)
+		angle2 := float32(i+1) * 2.0 * math.Pi / float32(segments)
+
+		// center
+		b.Vertices = append(b.Vertices,
+			0, 0, 0, 0.5, 0.5,
+		)
+
+		// first point
+		b.Vertices = append(b.Vertices,
+			radius*float32(math.Cos(float64(angle1))),
+			radius*float32(math.Sin(float64(angle1))),
+			0,
+			1, 0,
+		)
+
+		// second point
+		b.Vertices = append(b.Vertices,
+			radius*float32(math.Cos(float64(angle2))),
+			radius*float32(math.Sin(float64(angle2))),
+			0,
+			0, 1,
+		)
 	}
 
 }
 
-func (bullet *Bullet) LoadVertexAttribs() {
-	bullet.VAO = helper.GenBindVertexArray(3)
+func (b *Bullet) Fire(start, direction mgl32.Vec3) {
+	b.Alive = true
+	b.Position = start
+	b.StartPosition = start // ✅ ADD THIS
+	b.Direction = direction.Normalize()
+	b.Velocity = b.Direction.Mul(b.ShotSpeed)
+}
+
+func (b *Bullet) Update(dt float32) {
+	if !b.Alive {
+		return
+	}
+
+	b.Position = b.Position.Add(
+		b.Velocity.Mul(dt),
+	)
+}
+
+func (b *Bullet) Render(shader *helper.Shader) {
+	if !b.Alive {
+		return
+	}
+
+	helper.BindVertextArray(b.VAO)
+	helper.BindTexture(b.texture)
+
+	model := mgl32.Translate3D(
+		b.Position.X(),
+		b.Position.Y(),
+		b.Position.Z(),
+	)
+
+	shader.SetMat4("model", model)
+	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(b.Vertices)/5))
+}
+
+func (b *Bullet) LoadVertexAttribs() {
+	b.VAO = helper.GenBindVertexArray(3)
 	helper.GenBindBuffer(gl.ARRAY_BUFFER, 1)
-	helper.BufferDataFloat(gl.ARRAY_BUFFER, bullet.Vertices, gl.STATIC_DRAW)
+	helper.BufferDataFloat(gl.ARRAY_BUFFER, b.Vertices, gl.STATIC_DRAW)
+
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 5*4, nil)
 	gl.EnableVertexAttribArray(0)
 	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 5*4, 3*4)
 	gl.EnableVertexAttribArray(1)
+
 	helper.UnbindVertexArray()
-}
-
-func (bullet *Bullet) Renderer(camera *helper.Camera, shader_program *helper.Shader, bim *BulletInMotion) {
-	helper.BindVertextArray(bullet.VAO)
-	helper.BindTexture(bullet.texture)
-
-	if bullet.IsFired {
-		bim.PosZ -= float32(bullet.ShotSpeed)
-		var firing_range float32 = -20
-		if bim.PosZ <= firing_range {
-			bim.PosZ = camera.Position.Z()
-			bullet.IsFired = false
-		}
-		modelMatrix := mgl32.Ident4()
-		modelMatrix = mgl32.Translate3D(bim.PosX, camera.Position.Y(), bim.PosZ).Mul4(modelMatrix)
-		shader_program.SetMat4("model", modelMatrix)
-	} else {
-		bim.PosZ = camera.Position.Z()
-		modelMatrix := mgl32.Ident4()
-		modelMatrix = mgl32.Translate3D(camera.Position.X(), camera.Position.Y()-.4, camera.Position.Z()).Mul4(modelMatrix)
-		shader_program.SetMat4("model", modelMatrix)
-	}
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(bullet.Vertices)/5))
 }

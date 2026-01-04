@@ -1,8 +1,8 @@
 package gamelogic
 
 import (
-	"errors"
-	"fmt"
+	// "errors"
+	"math"
 	"math/rand"
 	"time"
 
@@ -12,42 +12,55 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-func GetHitEnemy(
-	camera *helper.Camera,
-	bim *objects.BulletInMotion,
-	enemy_position *[]objects.ExtraEnemyProperty,
-) (objects.ExtraEnemyProperty, error) {
+func BulletHitsEnemy(
+	bullet *objects.Bullet,
+	enemies *[]objects.ExtraEnemyProperty,
+	score *ScoreTrack,
+) {
+	for i := range *enemies {
+		enemy := &(*enemies)[i]
 
-	const gap = 1
-	for _, prop := range *enemy_position {
-		if bim.PosX >= prop.Position.X()-gap && bim.PosX <= prop.Position.X()+gap &&
-			bim.PosY >= prop.Position.Y()-gap && bim.PosY <= prop.Position.Y()+gap &&
-			bim.PosZ >= prop.Position.Z() && bim.PosZ <= prop.Position.Z()+gap {
-			bim.PosZ = camera.Position.Z()
-			return prop, nil
+		if enemy.IsHit {
+			continue
+		}
+
+		distance := bullet.Position.Sub(enemy.Position).Len()
+
+		if distance < bullet.Radius+0.5 {
+			enemy.IsHit = true
+			bullet.Alive = false
+
+			score.KillCount++
+			score.Points++
+
+			return // one bullet = one kill
 		}
 	}
-	return objects.ExtraEnemyProperty{}, errors.New("no enemy is hit unfortunately")
 }
 
-func MoveEnemies(enemies *[]objects.ExtraEnemyProperty, speed *float32) {
-	var temp_z float32 = -.025
-	var temp_y float32 = .025
-	for i, prop := range *enemies {
-		if !prop.IsHit {
-			former_z_position := prop.Position.Z()
-			former_z_position += *speed
-			prop.Position = mgl32.Vec3{prop.Position.X(), prop.Position.Y(), former_z_position}
-			(*enemies)[i] = prop
-		} else {
-			// println("whyy tho")
-			former_z_position := prop.Position.Z()
-			former_z_position += temp_z
-			former_y_position := prop.Position.Y()
-			former_y_position += temp_y
-			prop.Position = mgl32.Vec3{prop.Position.X(), former_y_position, former_z_position}
-			(*enemies)[i] = prop
+func MoveEnemies(
+	enemies *[]objects.ExtraEnemyProperty,
+	speed *float32,
+	deltaTime float32,
+) {
+	for i := range *enemies {
+		enemy := &(*enemies)[i]
+
+		if enemy.IsHit {
+			enemy.Position[1] += 0.025
+			enemy.Position[2] -= 0.025
+			continue
 		}
+
+		// Move forward (Z axis)
+		enemy.Position[2] += *speed
+
+		// Bounce (Y axis)
+		enemy.Time += deltaTime
+		enemy.Position[1] =
+			enemy.BaseY +
+				float32(math.Sin(float64(enemy.Time*enemy.BounceSpd)))*
+					enemy.BounceAmp
 	}
 }
 
@@ -88,13 +101,15 @@ func spawnMore(enemies *[]objects.ExtraEnemyProperty) {
 		x := minX + rng.Float32()*(maxX-minX)
 		z := minZ + rng.Float32()*(maxZ-minZ)
 
-		id := i + 1
-		(*enemies) = append(
-			(*enemies),
+		(*enemies) = append(*enemies,
 			objects.ExtraEnemyProperty{
-				Id:       uint32(id),
-				IsHit:    false,
-				Position: mgl32.Vec3{x, y, z},
+				Id:        uint32(i + 1),
+				IsHit:     false,
+				Position:  mgl32.Vec3{x, y, z},
+				BaseY:     y,
+				BounceAmp: 0.4 + rng.Float32()*0.3, // random height
+				BounceSpd: 2.0 + rng.Float32()*2.0, // random speed
+				Time:      rng.Float32() * 10.0,    // desync enemies
 			},
 		)
 	}
@@ -115,9 +130,9 @@ func HandlePassedEnemies(enemies *[]objects.ExtraEnemyProperty, player_position 
 	for i, enemy := range *enemies {
 		if enemy.Position.Z() > player_position.Position.Z() {
 			scoreTrack.Points -= 1
-			passedID := enemy.Id
+			// passedID := enemy.Id
 			*enemies = append((*enemies)[:i], (*enemies)[i+1:]...)
-			fmt.Printf("Enemy with ID %d passed you!\n", passedID)
+			// fmt.Printf("Enemy with ID %d passed you!\n", passedID)
 		}
 	}
 }

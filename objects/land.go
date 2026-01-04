@@ -17,8 +17,8 @@ type Land struct {
 }
 
 func (land *Land) New() {
-	land_file_path := filepath.Join("assets", "grass.jpg")
-	land.texture = helper.LoadTextureAlphaJpeg(land_file_path)
+	land_file_path := filepath.Join("assets", "Brick_01.png")
+	land.texture = helper.LoadTextureAlphaPng(land_file_path)
 	land.Vertices = []float32{
 		-0.5, 0.5, -0.5, 0.0, 1.0,
 		0.5, 0.5, -0.5, 1.0, 1.0,

@@ -20,50 +20,79 @@ func (player *Player) New() {
 
 	var gold_file_path string = filepath.Join("assets", "gold.png")
 	player.texture = helper.LoadTextureAlphaPng(gold_file_path)
-
 	player.Vertices = []float32{
-		-0.5, -0.5, -0.5, 0.0, 1.0, // Bottom left back
-		0.5, -0.5, -0.5, 1.0, 1.0, // Bottom right back
-		0.5, -0.5, 0.5, 1.0, 0.0, // Bottom right front
-		0.5, -0.5, 0.5, 1.0, 0.0, // Bottom right front
-		-0.5, -0.5, 0.5, 0.0, 0.0, // Bottom left front
-		-0.5, -0.5, -0.5, 0.0, 1.0, // Bottom left back
+		// ---- NOSE (pyramid) ----
+		0.0, 0.0, 0.8, 0.5, 0.0, // tip
+		-0.3, -0.2, 0.2, 0.0, 1.0,
+		0.3, -0.2, 0.2, 1.0, 1.0,
 
-		-0.5, 0.5, -0.5, 0.0, 1.0, // Top left back
-		0.5, 0.5, -0.5, 1.0, 1.0, // Top right back
-		0.5, 0.5, 0.5, 1.0, 0.0, // Top right front
-		0.5, 0.5, 0.5, 1.0, 0.0, // Top right front
-		-0.5, 0.5, 0.5, 0.0, 0.0, // Top left front
-		-0.5, 0.5, -0.5, 0.0, 1.0, // Top left back
+		0.0, 0.0, 0.8, 0.5, 0.0,
+		0.3, -0.2, 0.2, 1.0, 1.0,
+		0.0, 0.3, 0.2, 0.5, 1.0,
 
-		-0.5, 0.5, 0.5, 0.0, 0.0, // Top left front
-		0.5, 0.5, 0.5, 1.0, 0.0, // Top right front
-		0.5, -0.5, 0.5, 1.0, 1.0, // Bottom right front
-		0.5, -0.5, 0.5, 1.0, 1.0, // Bottom right front
-		-0.5, -0.5, 0.5, 0.0, 1.0, // Bottom left front
-		-0.5, 0.5, 0.5, 0.0, 0.0, // Top left front
+		0.0, 0.0, 0.8, 0.5, 0.0,
+		0.0, 0.3, 0.2, 0.5, 1.0,
+		-0.3, -0.2, 0.2, 0.0, 1.0,
 
-		-0.5, 0.5, -0.5, 0.0, 0.0, // Top left back
-		0.5, 0.5, -0.5, 1.0, 0.0, // Top right back
-		0.5, -0.5, -0.5, 1.0, 1.0, // Bottom right back
-		0.5, -0.5, -0.5, 1.0, 1.0, // Bottom right back
-		-0.5, -0.5, -0.5, 0.0, 1.0, // Bottom left back
-		-0.5, 0.5, -0.5, 0.0, 0.0, // Top left back
+		// ---- BODY (boxy rear) ----
+		-0.3, -0.2, 0.2, 0.0, 1.0,
+		0.3, -0.2, 0.2, 1.0, 1.0,
+		0.3, -0.2, -0.5, 1.0, 0.0,
+		0.3, -0.2, -0.5, 1.0, 0.0,
+		-0.3, -0.2, -0.5, 0.0, 0.0,
+		-0.3, -0.2, 0.2, 0.0, 1.0,
 
-		-0.5, 0.5, -0.5, 0.0, 0.0, // Top left back
-		-0.5, 0.5, 0.5, 1.0, 0.0, // Top left front
-		-0.5, -0.5, 0.5, 1.0, 1.0, // Bottom left front
-		-0.5, -0.5, 0.5, 1.0, 1.0, // Bottom left front
-		-0.5, -0.5, -0.5, 0.0, 1.0, // Bottom left back
-		-0.5, 0.5, -0.5, 0.0, 0.0, // Top left back
-
-		0.5, 0.5, -0.5, 0.0, 0.0, // Top right back
-		0.5, 0.5, 0.5, 1.0, 0.0, // Top right front
-		0.5, -0.5, 0.5, 1.0, 1.0, // Bottom right front
-		0.5, -0.5, 0.5, 1.0, 1.0, // Bottom right front
-		0.5, -0.5, -0.5, 0.0, 1.0, // Bottom right back
-		0.5, 0.5, -0.5, 0.0, 0.0, // Top right back
+		-0.3, 0.2, 0.2, 0.0, 1.0,
+		0.3, 0.2, 0.2, 1.0, 1.0,
+		0.3, 0.2, -0.5, 1.0, 0.0,
+		0.3, 0.2, -0.5, 1.0, 0.0,
+		-0.3, 0.2, -0.5, 0.0, 0.0,
+		-0.3, 0.2, 0.2, 0.0, 1.0,
 	}
+
+	// player.Vertices = []float32{
+	// 	-0.5, -0.5, -0.5, 0.0, 1.0, // Bottom left back
+	// 	0.5, -0.5, -0.5, 1.0, 1.0, // Bottom right back
+	// 	0.5, -0.5, 0.5, 1.0, 0.0, // Bottom right front
+	// 	0.5, -0.5, 0.5, 1.0, 0.0, // Bottom right front
+	// 	-0.5, -0.5, 0.5, 0.0, 0.0, // Bottom left front
+	// 	-0.5, -0.5, -0.5, 0.0, 1.0, // Bottom left back
+
+	// 	-0.5, 0.5, -0.5, 0.0, 1.0, // Top left back
+	// 	0.5, 0.5, -0.5, 1.0, 1.0, // Top right back
+	// 	0.5, 0.5, 0.5, 1.0, 0.0, // Top right front
+	// 	0.5, 0.5, 0.5, 1.0, 0.0, // Top right front
+	// 	-0.5, 0.5, 0.5, 0.0, 0.0, // Top left front
+	// 	-0.5, 0.5, -0.5, 0.0, 1.0, // Top left back
+
+	// 	-0.5, 0.5, 0.5, 0.0, 0.0, // Top left front
+	// 	0.5, 0.5, 0.5, 1.0, 0.0, // Top right front
+	// 	0.5, -0.5, 0.5, 1.0, 1.0, // Bottom right front
+	// 	0.5, -0.5, 0.5, 1.0, 1.0, // Bottom right front
+	// 	-0.5, -0.5, 0.5, 0.0, 1.0, // Bottom left front
+	// 	-0.5, 0.5, 0.5, 0.0, 0.0, // Top left front
+
+	// 	-0.5, 0.5, -0.5, 0.0, 0.0, // Top left back
+	// 	0.5, 0.5, -0.5, 1.0, 0.0, // Top right back
+	// 	0.5, -0.5, -0.5, 1.0, 1.0, // Bottom right back
+	// 	0.5, -0.5, -0.5, 1.0, 1.0, // Bottom right back
+	// 	-0.5, -0.5, -0.5, 0.0, 1.0, // Bottom left back
+	// 	-0.5, 0.5, -0.5, 0.0, 0.0, // Top left back
+
+	// 	-0.5, 0.5, -0.5, 0.0, 0.0, // Top left back
+	// 	-0.5, 0.5, 0.5, 1.0, 0.0, // Top left front
+	// 	-0.5, -0.5, 0.5, 1.0, 1.0, // Bottom left front
+	// 	-0.5, -0.5, 0.5, 1.0, 1.0, // Bottom left front
+	// 	-0.5, -0.5, -0.5, 0.0, 1.0, // Bottom left back
+	// 	-0.5, 0.5, -0.5, 0.0, 0.0, // Top left back
+
+	// 	0.5, 0.5, -0.5, 0.0, 0.0, // Top right back
+	// 	0.5, 0.5, 0.5, 1.0, 0.0, // Top right front
+	// 	0.5, -0.5, 0.5, 1.0, 1.0, // Bottom right front
+	// 	0.5, -0.5, 0.5, 1.0, 1.0, // Bottom right front
+	// 	0.5, -0.5, -0.5, 0.0, 1.0, // Bottom right back
+	// 	0.5, 0.5, -0.5, 0.0, 0.0, // Top right back
+	// }
 
 	player.Positions = []mgl32.Vec3{
 		{0.0, 0.7, -7.0},
@@ -88,5 +117,7 @@ func (player *Player) Renderer(camera *helper.Camera, shader_program *helper.Sha
 	modelMatrix := mgl32.Ident4()
 	modelMatrix = mgl32.Translate3D(camera.Position.X(), camera.Position.Y()-.8, camera.Position.Z()).Mul4(modelMatrix)
 	shader_program.SetMat4("model", modelMatrix)
-	gl.DrawArrays(gl.TRIANGLES, 0, 36)
+	// gl.DrawArrays(gl.TRIANGLES, 0, 36)
+	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(player.Vertices)/5))
+
 }
