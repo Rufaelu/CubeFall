@@ -47,8 +47,13 @@ func main() {
 
 	window.GLCreateContext()
 	gl.Init()
+	menushader, err := helper.NewShader(
+		filepath.Join("shaders", "menu.vert"),
+		filepath.Join("shaders", "menu.frag"),
+	)
 
-	Menu.RunMainMenu(window)
+	// state := helper.StatePlaying
+	state := Menu.RunPauseMenu(window, menushader)
 	gl.Enable(gl.DEPTH_TEST)
 
 	// ---------------- SHADER ----------------
@@ -96,9 +101,11 @@ func main() {
 	previousTime := time.Now()
 	fireRate := float32(0.001) // 10 bullets/sec
 	fireTimer := float32(0.01)
-
+	if state == helper.StatePaused {
+		state = Menu.RunPauseMenu(window, menushader)
+	}
 	// ================= GAME LOOP =================
-	for {
+	for state != helper.StateQuit {
 		// frameStart := time.Now()
 		currentTime := time.Now()
 		elapsedTime := float32(currentTime.Sub(previousTime).Seconds())
@@ -226,6 +233,12 @@ func main() {
 
 		window.GLSwap()
 		shader.CheckForShaderChanges()
+		if keyStates[sdl.SCANCODE_ESCAPE] != 0 {
+			state = helper.StatePaused
+			state = Menu.RunPauseMenu(window, menushader)
+
+		}
+
 	}
 }
 
@@ -238,3 +251,246 @@ func updateWindowTitle(window *sdl.Window, score *gamelogic.ScoreTrack) {
 		score.PassedMaxLevel,
 	))
 }
+
+//!Divide
+
+// package main
+
+// import (
+// 	"fmt"
+// 	"path/filepath"
+// 	"time"
+
+// 	"CubeFall/Menu"
+// 	"CubeFall/gamelogic"
+// 	"CubeFall/helper"
+// 	"CubeFall/objects"
+
+// 	"github.com/go-gl/gl/v3.3-core/gl"
+// 	"github.com/go-gl/mathgl/mgl32"
+// 	"github.com/veandco/go-sdl2/sdl"
+// )
+
+// const winWidth = 1280
+// const winHeight = 730
+
+// func main() {
+// 	// ---------- SDL INIT ----------
+// 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+// 		panic(err)
+// 	}
+// 	defer sdl.Quit()
+
+// 	sdl.GLSetAttribute(sdl.GL_CONTEXT_PROFILE_MASK, sdl.GL_CONTEXT_PROFILE_CORE)
+// 	sdl.GLSetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, 3)
+// 	sdl.GLSetAttribute(sdl.GL_CONTEXT_MINOR_VERSION, 3)
+
+// 	window, err := sdl.CreateWindow(
+// 		"CubeFall",
+// 		50, 30,
+// 		winWidth, winHeight,
+// 		sdl.WINDOW_OPENGL,
+// 	)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer window.Destroy()
+
+// 	window.GLCreateContext()
+// 	if err := gl.Init(); err != nil {
+// 		panic(err)
+// 	}
+
+// 	gl.Enable(gl.DEPTH_TEST)
+
+// 	// ---------- MENU SHADER ----------
+// 	menuShader, err := helper.NewShader(
+// 		filepath.Join("shaders", "menu.vert"),
+// 		filepath.Join("shaders", "menu.frag"),
+// 	)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	// ---------- GAME SHADER ----------
+// 	shader, err := helper.NewShader(
+// 		filepath.Join("shaders", "first.vert"),
+// 		filepath.Join("shaders", "quad_tex.frag"),
+// 	)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	// ---------- CAMERA ----------
+// 	camera := helper.NewCamera(
+// 		mgl32.Vec3{0, 0, 3},
+// 		mgl32.Vec3{0, 1, 0},
+// 		-90, 0,
+// 		2.7, 0.4,
+// 	)
+
+// 	// ---------- OBJECTS ----------
+// 	scoreTrack := gamelogic.NewScore(0, 0)
+
+// 	var land objects.Land
+// 	var enemy objects.Enemey
+// 	var player objects.Player
+// 	var wall objects.Wall
+// 	var bullets []objects.Bullet
+
+// 	land.New()
+// 	enemy.New()
+// 	player.New()
+// 	wall.New()
+
+// 	land.LoadVertexAttribs()
+// 	enemy.LoadVertexAttribs()
+// 	player.LoadVertexAttribs()
+// 	wall.LoadVertexAttribs()
+
+// 	enemySpeed := float32(0.01111)
+
+// 	prevMouseX, prevMouseY, _ := sdl.GetMouseState()
+// 	previousTime := time.Now()
+
+// 	fireRate := float32(0.1)
+// 	fireTimer := float32(0)
+// 	// state := Menu.RunPauseMenu(window, menuShader)
+// 	state := helper.StatePlaying
+
+// 	// ================= MAIN LOOP =================
+// 	for state != helper.StateQuit {
+
+// 		currentTime := time.Now()
+// 		elapsedTime := float32(currentTime.Sub(previousTime).Seconds())
+// 		previousTime = currentTime
+
+// 		switch state {
+
+// 		// ================= PLAYING =================
+// 		case helper.StatePlaying:
+
+// 			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+// 				switch event.(type) {
+// 				case *sdl.QuitEvent:
+// 					state = helper.StateQuit
+// 				}
+// 			}
+
+// 			sdl.PumpEvents()
+// 			keyStates := sdl.GetKeyboardState()
+
+// 			if keyStates[sdl.SCANCODE_ESCAPE] != 0 {
+// 				state = helper.StatePaused
+// 				time.Sleep(150 * time.Millisecond)
+// 				continue
+// 			}
+
+// 			// ---- INPUT ----
+// 			mouseX, mouseY, _ := sdl.GetMouseState()
+// 			direction := helper.Nowhere
+
+// 			if keyStates[sdl.SCANCODE_A] != 0 {
+// 				direction = helper.Left
+// 			}
+// 			if keyStates[sdl.SCANCODE_D] != 0 {
+// 				direction = helper.Right
+// 			}
+// 			if keyStates[sdl.SCANCODE_W] != 0 {
+// 				direction = helper.Forward
+// 			}
+// 			if keyStates[sdl.SCANCODE_S] != 0 {
+// 				direction = helper.Backward
+// 			}
+
+// 			// ---- SHOOT ----
+// 			fireTimer -= elapsedTime
+// 			_, _, mouseButtons := sdl.GetMouseState()
+// 			leftClick := mouseButtons&sdl.Button(sdl.BUTTON_LEFT) != 0
+
+// 			if (keyStates[sdl.SCANCODE_SPACE] != 0 || leftClick) && fireTimer <= 0 {
+// 				var b objects.Bullet
+// 				b.New()
+// 				b.LoadVertexAttribs()
+// 				b.Fire(camera.Position, camera.Front)
+// 				bullets = append(bullets, b)
+// 				fireTimer = fireRate
+// 			}
+
+// 			for i := 0; i < len(bullets); i++ {
+// 				bullets[i].Update(elapsedTime)
+// 				gamelogic.BulletHitsEnemy(&bullets[i], &enemy.Extras, scoreTrack)
+
+// 				if bullets[i].Position.Sub(bullets[i].StartPosition).Len() > 50 {
+// 					bullets[i].Alive = false
+// 				}
+// 				if !bullets[i].Alive {
+// 					bullets = append(bullets[:i], bullets[i+1:]...)
+// 					i--
+// 				}
+// 			}
+
+// 			camera.UpdateCamera(
+// 				direction,
+// 				elapsedTime,
+// 				camera.MovementSpeed,
+// 				float32(mouseX-prevMouseX),
+// 				-float32(mouseY-prevMouseY),
+// 			)
+
+// 			prevMouseX = mouseX
+// 			prevMouseY = mouseY
+
+// 			gamelogic.MoveEnemies(&enemy.Extras, &enemySpeed, elapsedTime)
+
+// 			if gamelogic.AllEnemiesAreHit(&enemy.Extras) {
+// 				gamelogic.LevelUp(scoreTrack, &enemySpeed, &enemy.Extras)
+// 			}
+
+// 			// ---- RENDER GAME ----
+// 			gl.ClearColor(0.53, 0.81, 0.92, 1)
+// 			gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+// 			shader.Use()
+
+// 			projection := mgl32.Perspective(
+// 				mgl32.DegToRad(45),
+// 				float32(winWidth)/float32(winHeight),
+// 				0.1, 200,
+// 			)
+
+// 			shader.SetMat4("projection", projection)
+// 			shader.SetMat4("view", camera.GetViewMatrix())
+
+// 			land.Renderer(shader)
+// 			wall.Renderer(shader)
+// 			enemy.Renderer(shader)
+// 			player.Renderer(camera, shader)
+
+// 			for i := range bullets {
+// 				bullets[i].Render(shader)
+// 			}
+
+// 			updateWindowTitle(window, scoreTrack)
+// 			window.GLSwap()
+
+// 		// ================= PAUSED =================
+// 		case helper.StatePaused:
+// 			state = Menu.RunPauseMenu(window, menuShader)
+// 		}
+
+// 		sdl.Delay(16)
+// 	}
+
+// 	gamelogic.PrintGameStats(scoreTrack)
+// }
+
+// // ---------- UI ----------
+// func updateWindowTitle(window *sdl.Window, score *gamelogic.ScoreTrack) {
+// 	window.SetTitle(fmt.Sprintf(
+// 		"CubeFall | Score: %d | Kills: %d | Max Level: %d",
+// 		score.Points,
+// 		score.KillCount,
+// 		score.PassedMaxLevel,
+// 	))
+// }

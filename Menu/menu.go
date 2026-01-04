@@ -1,32 +1,32 @@
 package Menu
 
 import (
-	"path/filepath"
-	"time"
-
-	"CubeFall/helper"
-
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/veandco/go-sdl2/sdl"
+
+	"CubeFall/helper"
 )
 
 const winWidth = 1280
 const winHeight = 730
 
-func RunMainMenu(window *sdl.Window) bool {
-	menuShader, err := helper.NewShader(
-		filepath.Join("shaders", "menu.vert"), filepath.Join("shaders", "menu.frag"),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	for {
+func RunPauseMenu(window *sdl.Window, shader *helper.Shader) helper.GameState {
+	pressed := false
+	for !pressed {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch e := event.(type) {
 
 			case *sdl.QuitEvent:
-				return false
+				return helper.StateQuit
+
+			case *sdl.KeyboardEvent:
+				if e.Type == sdl.KEYDOWN && e.Keysym.Sym == sdl.K_p {
+					pressed = true
+					return helper.StatePlaying
+				}
+				if e.Type == sdl.KEYDOWN && e.Keysym.Sym == sdl.K_q {
+					return helper.StateQuit
+				}
 
 			case *sdl.MouseButtonEvent:
 				if e.Type == sdl.MOUSEBUTTONDOWN && e.Button == sdl.BUTTON_LEFT {
@@ -34,29 +34,31 @@ func RunMainMenu(window *sdl.Window) bool {
 					my := float32(e.Y)
 
 					if inside(mx, my, 490, 260, 300, 70) {
-						time.Sleep(150 * time.Millisecond)
-						return true
-					}
+						pressed = true
 
+						return helper.StatePlaying
+					}
 					if inside(mx, my, 490, 360, 300, 70) {
-						return false
+						return helper.StateQuit
 					}
 				}
 			}
 		}
-
-		gl.ClearColor(0.08, 0.08, 0.12, 1)
-		gl.Clear(gl.COLOR_BUFFER_BIT)
-
-		DrawRect(menuShader, 490, 260, 300, 70, 0.2, 0.7, 0.2)
-		DrawRect(menuShader, 490, 360, 300, 70, 0.7, 0.2, 0.2)
-
-		window.GLSwap()
-		sdl.Delay(16)
 	}
+
+	gl.ClearColor(0.08, 0.08, 0.12, 1)
+	gl.Clear(gl.COLOR_BUFFER_BIT)
+
+	DrawRect(shader, 490, 260, 300, 70, 0.2, 0.7, 0.2)
+	DrawRect(shader, 490, 360, 300, 70, 0.7, 0.2, 0.2)
+
+	window.GLSwap()
+	return helper.StatePaused
 }
 
+// ---------- DRAW ----------
 func DrawRect(shader *helper.Shader, x, y, w, h float32, r, g, b float32) {
+
 	nx := func(px float32) float32 {
 		return (px/float32(winWidth))*2 - 1
 	}
